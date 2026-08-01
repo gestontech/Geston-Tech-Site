@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      <title>Geston Channel Reaction</title>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+      <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+          :root {
+              --bg: #0b0e14;
+              --panel: rgba(19, 23, 31, 0.85);
+              --accent: #00d2ff;
+              --danger: #ff3b3b;
+              --success: #00ff88;
+              --text-dim: #94a3b8;
+              --border: rgba(255, 255, 255, 0.08);
+              --glow: rgba(0, 210, 255, 0.2);
+          }
+
+          * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+
+          body {
+              background: radial-gradient(ellipse at 20% 20%, rgba(0,210,255,0.07) 0%, transparent 40%),
+                          radial-gradient(ellipse at 80% 80%, rgba(160,100,255,0.05) 0%, transparent 40%),
+                          var(--bg);
+              color: #fff;
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 20px;
+          }
+
+          canvas#bgc { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
+          .container {
+              position: relative;
+              z-index: 1;
+              width: 100%;
+              max-width: 520px;
+          }
+
+          .header {
+              text-align: center;
+              margin-bottom: 30px;
+          }
+
+          .logo {
+              width: 64px;
+              height: 64px;
+              border-radius: 18px;
+              background: radial-gradient(circle, rgba(0,210,255,0.18), rgba(0,210,255,0.04));
+              border: 1.5px solid rgba(0,210,255,0.3);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin: 0 auto 16px;
+              box-shadow: 0 0 30px rgba(0,210,255,0.15);
+              animation: logoGlow 3s ease-in-out infinite alternate;
+          }
+
+          @keyframes logoGlow {
+              from { box-shadow: 0 0 20px rgba(0,210,255,0.1); }
+              to { box-shadow: 0 0 50px rgba(0,210,255,0.3); }
+          }
+
+          .logo i { font-size: 26px; color: var(--accent); }
+
+          .header h1 {
+              font-size: 1.6rem;
+              font-weight: 800;
+              letter-spacing: -0.5px;
+          }
+
+          .header h1 span { color: var(--accent); }
+
+          .header .sub {
+              font-size: 0.7rem;
+              color: rgba(0,210,255,0.45);
+              letter-spacing: 3px;
+              text-transform: uppercase;
+              margin-top: 4px;
+          }
+
+          .card {
+              background: var(--panel);
+              border: 1px solid var(--border);
+              border-radius: 24px;
+              padding: 28px 24px;
+              backdrop-filter: blur(16px);
+              box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03);
+              margin-bottom: 16px;
+          }
+
+          .field { margin-bottom: 16px; }
+
+          .field label {
+              display: block;
+              font-size: 0.7rem;
+              font-weight: 700;
+              color: var(--text-dim);
+              letter-spacing: 1px;
+              text-transform: uppercase;
+              margin-bottom: 7px;
+          }
+
+          .field input {
+              width: 100%;
+              padding: 13px 16px;
+              background: rgba(255,255,255,0.03);
+              border: 1px solid var(--border);
+              border-radius: 12px;
+              color: #fff;
+              font-size: 0.9rem;
+              outline: none;
+              transition: border-color 0.25s, box-shadow 0.25s;
+              font-family: inherit;
+          }
+
+          .field input::placeholder { color: rgba(255,255,255,0.2); }
+
+          .field input:focus {
+              border-color: rgba(0,210,255,0.5);
+              box-shadow: 0 0 0 3px rgba(0,210,255,0.07);
+          }
+
+          .field .hint {
+              font-size: 0.65rem;
+              color: var(--text-dim);
+              margin-top: 5px;
+          }
+
+          .emoji-row {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              margin-bottom: 8px;
+          }
+
+          .emoji-row .emoji-num {
+              font-size: 0.68rem;
+              font-weight: 700;
+              color: var(--text-dim);
+              min-width: 52px;
+          }
+
+          .emoji-row input {
+              flex: 1;
+              padding: 11px 14px;
+              background: rgba(255,255,255,0.03);
+              border: 1px solid var(--border);
+              border-radius: 11px;
+              color: #fff;
+              font-size: 1.1rem;
+              outline: none;
+              transition: border-color 0.25s;
+              font-family: inherit;
+          }
+
+          .emoji-row input::placeholder { color: rgba(255,255,255,0.18); font-size: 0.85rem; }
+          .emoji-row input:focus { border-color: rgba(0,210,255,0.5); }
+
+          .emoji-row .badge {
+              font-size: 0.6rem;
+              font-weight: 700;
+              padding: 3px 7px;
+              border-radius: 6px;
+              min-width: 58px;
+              text-align: center;
+          }
+
+          .badge-req { color: var(--danger); background: rgba(255,59,59,0.1); border: 1px solid rgba(255,59,59,0.2); }
+          .badge-opt { color: var(--accent); background: rgba(0,210,255,0.08); border: 1px solid rgba(0,210,255,0.15); }
+
+          .send-btn {
+              width: 100%;
+              padding: 15px;
+              border: none;
+              border-radius: 14px;
+              font-size: 0.92rem;
+              font-weight: 800;
+              cursor: pointer;
+              background: linear-gradient(135deg, #00d2ff, #0099cc);
+              color: #000;
+              box-shadow: 0 8px 24px rgba(0,210,255,0.25);
+              transition: transform 0.2s, box-shadow 0.2s;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              letter-spacing: 0.3px;
+              font-family: inherit;
+              margin-top: 20px;
+          }
+
+          .send-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,210,255,0.35); }
+          .send-btn:active { transform: scale(0.98); }
+          .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+          .console-box {
+              display: none;
+              background: rgba(0,0,0,0.5);
+              border: 1px solid var(--border);
+              border-radius: 18px;
+              padding: 18px 20px;
+              font-family: 'JetBrains Mono', monospace;
+              font-size: 0.73rem;
+              line-height: 1.75;
+              min-height: 220px;
+              max-height: 460px;
+              overflow-y: auto;
+          }
+
+          .console-box::-webkit-scrollbar { width: 4px; }
+          .console-box::-webkit-scrollbar-track { background: transparent; }
+          .console-box::-webkit-scrollbar-thumb { background: rgba(0,210,255,0.2); border-radius: 4px; }
+
+          .console-line { color: #94a3b8; animation: fadeInLine 0.2s ease; }
+          @keyframes fadeInLine { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: translateX(0); } }
+
+          .c-ts { color: rgba(0,210,255,0.35); }
+          .c-ok { color: var(--success); }
+          .c-err { color: var(--danger); }
+          .c-acc { color: var(--accent); }
+          .c-pur { color: #a064ff; }
+
+          .success-tick {
+              display: none;
+              text-align: center;
+              padding: 10px 0 4px;
+              animation: popIn 0.4s cubic-bezier(0.16,1,0.3,1);
+          }
+
+          @keyframes popIn {
+              from { opacity: 0; transform: scale(0.7); }
+              to { opacity: 1; transform: scale(1); }
+          }
+
+          .success-tick i {
+              font-size: 2.5rem;
+              color: var(--success);
+              filter: drop-shadow(0 0 12px rgba(0,255,136,0.5));
+          }
+
+          .success-tick p {
+              font-size: 0.82rem;
+              color: var(--success);
+              font-weight: 700;
+              margin-top: 8px;
+          }
+          .fail-tick {
+              display: none;
+              text-align: center;
+              padding: 10px 0 4px;
+              animation: popIn 0.4s cubic-bezier(0.16,1,0.3,1);
+          }
+          .fail-tick i {
+              font-size: 2.5rem;
+              color: var(--danger);
+              filter: drop-shadow(0 0 12px rgba(255,59,59,0.5));
+          }
+          .fail-tick p {
+              font-size: 0.82rem;
+              color: var(--danger);
+              font-weight: 700;
+              margin-top: 8px;
+          }
+
+          .api-example {
+              background: rgba(0,0,0,0.4);
+              border: 1px solid var(--border);
+              border-radius: 14px;
+              padding: 16px;
+              font-family: 'JetBrains Mono', monospace;
+              font-size: 0.68rem;
+              color: var(--text-dim);
+              line-height: 1.7;
+              overflow-x: auto;
+              white-space: pre;
+          }
+
+          .api-example .kw { color: #a064ff; }
+          .api-example .str { color: var(--success); }
+          .api-example .prop { color: var(--accent); }
+
+          .section-title {
+              font-size: 0.7rem;
+              font-weight: 700;
+              color: var(--text-dim);
+              letter-spacing: 1.5px;
+              text-transform: uppercase;
+              margin-bottom: 12px;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+          }
+
+          .section-title::after {
+              content: '';
+              flex: 1;
+              height: 1px;
+              background: var(--border);
+          }
+
+          .footer {
+              text-align: center;
+              font-size: 0.65rem;
+              color: var(--text-dim);
+              margin-top: 20px;
+              letter-spacing: 1px;
+          }
+
+          .footer span { color: var(--accent); font-weight: 700; }
+          .input-wrap { position: relative; }
+          .clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.9rem; padding: 4px 6px; border-radius: 6px; transition: color 0.2s; }
+          .clear-btn:hover { color: var(--danger); }
+          .cooldown-bar-wrap { display: none; margin-top: 16px; padding: 14px 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(0,210,255,0.15); border-radius: 14px; }
+          .cooldown-bar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+          .cooldown-bar-label { font-size: 0.68rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+          .cooldown-bar-sec { font-size: 1rem; font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+          .cooldown-bar-track { width: 100%; height: 6px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
+          .cooldown-bar-fill { height: 100%; background: linear-gradient(90deg, #00d2ff, #a064ff); border-radius: 3px; width: 100%; transition: width 1s linear; }
+          .wa-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 13px; border-radius: 14px; border: 1px solid rgba(37,211,102,0.3); background: rgba(37,211,102,0.06); color: #25d366; font-size: 0.88rem; font-weight: 700; cursor: pointer; text-decoration: none; transition: background 0.2s, border-color 0.2s; margin-top: 0; }
+          .wa-btn:hover { background: rgba(37,211,102,0.12); border-color: rgba(37,211,102,0.5); }
+          .wa-btn svg { width: 20px; height: 20px; fill: #25d366; }
+          .copy-api-btn { display: flex; align-items: center; gap: 7px; padding: 7px 14px; background: rgba(0,210,255,0.08); border: 1px solid rgba(0,210,255,0.2); border-radius: 9px; color: var(--accent); font-size: 0.72rem; font-weight: 700; cursor: pointer; margin-left: auto; }
+          .copy-api-btn:hover { background: rgba(0,210,255,0.15); }
+      </style>
+  </head>
+  <body>
+
+  <canvas id="bgc"></canvas>
+
+  <div class="container">
+      <div class="header">
+          <div class="logo"><i class="fas fa-satellite-dish"></i></div>
+          <h1>Geston Channel <span>Reaction</span></h1>
+          <div class="sub">by gestontech</div>
+      </div>
+
+      <div class="card">
+          <div class="section-title"><i class="fas fa-link"></i> Request</div>
+
+          <div class="field">
+              <label>API Key</label>
+              <input type="password" id="apiKeyInput" placeholder="xhc_xxxxxxxxxxxxxxxxxxxxxxxx">
+          </div>
+
+          <div class="field">
+              <label>Channel Link with Message ID</label>
+              <div style="display:flex;align-items:center;gap:8px;">
+                  <input type="text" id="channelUrl" placeholder="https://whatsapp.com/channel/xxx/120" style="flex:1;">
+                  <button type="button" onclick="document.getElementById('channelUrl').value=''" title="Clear" style="flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,59,59,0.08);border:1px solid rgba(255,59,59,0.2);border-radius:10px;color:#ff3b3b;cursor:pointer;font-size:0.82rem;"><i class="fas fa-times"></i></button>
+              </div>
+              <div class="hint">Must include the message ID at the end — e.g. /channel/0029Vb.../120</div>
+          </div>
+
+          <div class="field">
+              <label>Emojis (2 required, up to 5)</label>
+              <div id="emojiInputs">
+                  <div class="emoji-row">
+                      <span class="emoji-num">EMOJI 1</span>
+                      <input type="text" class="ei" placeholder="e.g. ❤️">
+                      <span class="badge badge-req">REQUIRED</span>
+                  </div>
+                  <div class="emoji-row">
+                      <span class="emoji-num">EMOJI 2</span>
+                      <input type="text" class="ei" placeholder="e.g. 🔥">
+                      <span class="badge badge-req">REQUIRED</span>
+                  </div>
+                  <div class="emoji-row">
+                      <span class="emoji-num">EMOJI 3</span>
+                      <input type="text" class="ei" placeholder="e.g. 😂">
+                      <span class="badge badge-opt">OPTIONAL</span>
+                  </div>
+                  <div class="emoji-row">
+                      <span class="emoji-num">EMOJI 4</span>
+                      <input type="text" class="ei" placeholder="e.g. 👍">
+                      <span class="badge badge-opt">OPTIONAL</span>
+                  </div>
+                  <div class="emoji-row">
+                      <span class="emoji-num">EMOJI 5</span>
+                      <input type="text" class="ei" placeholder="e.g. ✨">
+                      <span class="badge badge-opt">OPTIONAL</span>
+                  </div>
+              </div>
+          </div>
+
+          <button class="send-btn" id="sendBtn" onclick="sendReactions()">
+              <i class="fas fa-paper-plane"></i> Send Reactions
+          </button>
+          <div class="cooldown-bar-wrap" id="cooldownBarWrap">
+              <div class="cooldown-bar-header">
+                  <span class="cooldown-bar-label"><i class="fas fa-clock" style="margin-right:6px;"></i>Cooldown — please wait</span>
+                  <span class="cooldown-bar-sec"><span id="cooldownSec">5m 00s</span></span>
+              </div>
+              <div class="cooldown-bar-track"><div class="cooldown-bar-fill" id="cooldownBarFill"></div></div>
+          </div>
+      </div>
+
+      <div class="card" id="consoleCard" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 12px 0;">
+              <div class="section-title" style="margin:0;padding:0;"><i class="fas fa-terminal"></i> Console</div>
+              <button onclick="copyLogs('console_', this)" title="Copy logs" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(0,210,255,0.1);border:1px solid rgba(0,210,255,0.25);border-radius:8px;color:#00d2ff;cursor:pointer;font-size:0.85rem;"><i class="fas fa-copy"></i></button>
+          </div>
+          <div class="console-box" id="console_"></div>
+          <div class="success-tick" id="successTick">
+              <i class="fas fa-check-circle"></i>
+              <p id="successMsg">Reactions sent successfully!</p>
+          </div>
+          <div class="fail-tick" id="failTick">
+              <i class="fas fa-times-circle"></i>
+              <p id="failMsg">Failed to send reactions</p>
+          </div>
+      </div>
+
+      <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div class="section-title" style="margin:0;"><i class="fas fa-code"></i> API Reference</div><button class="copy-api-btn" onclick="copyApiUsage(this)"><i class="fas fa-copy"></i> Copy</button></div>
+          <div class="api-example"><span class="kw">fetch</span>(<span class="str">"https://channel-react.gestonmd.tech/channel-react"</span>, {
+    <span class="prop">method</span>: <span class="str">"POST"</span>,
+    <span class="prop">headers</span>: {
+        <span class="prop">"Content-Type"</span>: <span class="str">"application/json"</span>,
+        <span class="prop">"apikey"</span>: <span class="str">"YOUR_API_KEY"</span>
+    },
+    <span class="prop">body</span>: <span class="kw">JSON</span>.<span class="kw">stringify</span>({
+        <span class="prop">url</span>: <span class="str">"https://whatsapp.com/channel/0029Vb.../120"</span>,
+        <span class="prop">emoji</span>: <span class="str">"😂,❤️,😈"</span>
+    })
+  })
+    .<span class="kw">then</span>(r => r.<span class="kw">json</span>())</div>
+      </div>
+
+      <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <div class="section-title" style="margin:0;"><i class="fas fa-code"></i> Get API Key</div>
+          </div>
+          <p style="font-size:0.78rem;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">Need an API key? Contact the developer on WhatsApp to get one.</p>
+          <a class="wa-btn" href="https://wa.me/243993030390" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Contact Admin for API Key
+          </a>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+              <a class="wa-btn" href="https://whatsapp.com/channel/0029Vb8D3NVInlqTTymDYe3j" target="_blank" rel="noopener" style="background:rgba(37,211,102,0.1);border-color:rgba(37,211,102,0.4);">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  <i class="fas fa-star" style="font-size:0.75rem;margin-right:-4px;"></i> Follow Channel for Free API Key
+              </a>
+          </div>
+      </div>
+
+      <div class="footer">Author: <span>gestontech</span></div>
+  </div>
+
+<script>
+  function copyLogs(id, btn) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var text = Array.from(el.querySelectorAll('div')).map(function(d) { return d.innerText || d.textContent; }).join('\n');
+    navigator.clipboard.writeText(text).then(function() {
+      showToast('Logs copied!');
+      if (btn) { var orig = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check" style="color:#4ade80"></i>'; setTimeout(function(){ btn.innerHTML = orig; }, 2000); }
+    }).catch(function() { showToast('Copy failed'); });
+  }
+  function copyApiUsage(btn) {
+    var el = document.querySelector('.api-example');
+    if (!el) return;
+    navigator.clipboard.writeText(el.innerText || el.textContent).then(function() {
+      showToast('API usage copied!');
+      if (btn) { var orig = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check" style="color:#4ade80"></i> Copied!'; setTimeout(function(){ btn.innerHTML = orig; }, 2000); }
+    }).catch(function() { showToast('Copy failed'); });
+  }
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg; t.style.opacity = '1';
+    setTimeout(function() { t.style.opacity = '0'; }, 2000);
+  }
+
+const _ep = atob('aHR0cHM6Ly9hdXRoLnRveGljeC50ZWNo');
+  var _px=[0x78,0x68,0x63,0x39,0x6b,0x35,0x72,0x63];function _grc(k,t){var w=Math.floor(t/3e5);var b='';var kl=Math.min(k.length,40);for(var i=0;i<kl;i++){b+=String.fromCharCode((k.charCodeAt(i)^_px[i%_px.length]^(w&0xff))&0xff);}return btoa(b+'.'+w+'.'+kl).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');}
+
+  const bgCanvas = document.getElementById('bgc');
+  const bgCtx = bgCanvas.getContext('2d');
+  let pts = [];
+  function resizeBg() { bgCanvas.width = innerWidth; bgCanvas.height = innerHeight; }
+  function Pt() { this.x = Math.random()*innerWidth; this.y = Math.random()*innerHeight; this.vx=(Math.random()-0.5)*0.3; this.vy=(Math.random()-0.5)*0.3; this.r=Math.random()*1.2+0.4; }
+  Pt.prototype.upd = function() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>innerWidth) this.vx*=-1; if(this.y<0||this.y>innerHeight) this.vy*=-1; };
+  function drawBg() {
+      bgCtx.clearRect(0,0,innerWidth,innerHeight);
+      pts.forEach(function(p) {
+          p.upd();
+          bgCtx.fillStyle='rgba(0,210,255,0.18)';
+          bgCtx.beginPath(); bgCtx.arc(p.x,p.y,p.r,0,Math.PI*2); bgCtx.fill();
+          pts.forEach(function(q) {
+              var d=Math.hypot(p.x-q.x,p.y-q.y);
+              if(d<100){ bgCtx.strokeStyle='rgba(0,210,255,'+(0.06*(1-d/100))+')'; bgCtx.beginPath(); bgCtx.moveTo(p.x,p.y); bgCtx.lineTo(q.x,q.y); bgCtx.stroke(); }
+          });
+      });
+      requestAnimationFrame(drawBg);
+  }
+  resizeBg(); pts = Array.from({length:50},function(){return new Pt();}); window.addEventListener('resize',resizeBg); drawBg();
+
+  function ts() { return new Date().toLocaleTimeString(); }
+  function clog(html) {
+      var box = document.getElementById('console_');
+      var consoleCard = document.getElementById('consoleCard');
+      consoleCard.style.display = 'block';
+      box.style.display = 'block';
+      var line = document.createElement('div');
+      line.className = 'console-line';
+      line.innerHTML = '<span class="c-ts">[' + ts() + ']</span> ' + html;
+      box.appendChild(line);
+      box.scrollTop = box.scrollHeight;
+  }
+
+  var cooldownActive = false;
+  var _cooldownIv = null;
+  function fmtSecs(s) { var m=Math.floor(s/60),r=s%60; return m>0?m+'m '+(r<10?'0':'')+r+'s':r+'s'; }
+  function startCooldown(resumeSecs) {
+      if (_cooldownIv) clearInterval(_cooldownIv);
+      cooldownActive = true;
+      var barWrap = document.getElementById('cooldownBarWrap');
+      var barFill = document.getElementById('cooldownBarFill');
+      var secEl = document.getElementById('cooldownSec');
+      var btn = document.getElementById('sendBtn');
+      var TOTAL = 300;
+      var secs = (typeof resumeSecs === 'number' && resumeSecs > 0) ? resumeSecs : TOTAL;
+      if (!resumeSecs) localStorage.setItem('cr_cd_end', String(Date.now() + TOTAL * 1000));
+      if (barWrap) barWrap.style.display = 'block';
+      if (barFill) barFill.style.width = Math.round((secs/TOTAL)*100) + '%';
+      if (secEl) secEl.textContent = fmtSecs(secs);
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-hourglass-half fa-spin"></i> Cooling down...';
+      _cooldownIv = setInterval(function() {
+          secs--;
+          if (secEl) secEl.textContent = fmtSecs(secs);
+          if (barFill) barFill.style.width = Math.round((secs/TOTAL)*100) + '%';
+          if (secs <= 0) {
+              clearInterval(_cooldownIv); _cooldownIv = null;
+              if (barWrap) barWrap.style.display = 'none';
+              if (barFill) barFill.style.width = '100%';
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reactions';
+              cooldownActive = false;
+              localStorage.removeItem('cr_cd_end');
+          }
+      }, 1000);
+  }
+  // Resume cooldown on page load
+  (function() {
+      var end = parseInt(localStorage.getItem('cr_cd_end') || '0');
+      if (end && Date.now() < end) { startCooldown(Math.round((end - Date.now()) / 1000)); }
+  })();
+
+  async function sendReactions() {
+      if (cooldownActive) return;
+      var apiKey = document.getElementById('apiKeyInput').value.trim();
+      var channelUrl = document.getElementById('channelUrl').value.trim();
+      var emojiEls = document.querySelectorAll('.ei');
+      var emojis = Array.from(emojiEls).map(function(el) { return el.value.trim(); }).filter(Boolean);
+      var btn = document.getElementById('sendBtn');
+      var consoleCard = document.getElementById('consoleCard');
+      var consolEl = document.getElementById('console_');
+      var tick = document.getElementById('successTick');
+      var failTick = document.getElementById('failTick');
+      consolEl.innerHTML = '';
+      if (tick) tick.style.display = 'none';
+      if (failTick) failTick.style.display = 'none';
+      consoleCard.style.display = 'block';
+      setTimeout(function() { consoleCard.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 60);
+      if (!apiKey) { clog('<span class="c-err">ERR</span> API key is required.'); return; }
+      if (!channelUrl) { clog('<span class="c-err">ERR</span> Channel URL is required.'); return; }
+      if (!/whatsapp\.com\/channel\/[A-Za-z0-9_-]+\/\d+/.test(channelUrl)) {
+          clog('<span class="c-err">ERR</span> URL must include message ID — e.g. /channel/xxx/120'); return;
+      }
+      var _cMatch = channelUrl.match(/whatsapp\.com\/channel\/([A-Za-z0-9_-]+)/);
+      if (_cMatch && _cMatch[1] === '0029Vb8D3NVInlqTTymDYe3j') {
+          clog('<span class="c-err">BLOCKED</span> Cannot send reactions on the owner\'s channel');
+          var ft0 = document.getElementById('failTick'); if (ft0) { ft0.style.display='block'; var fm0=document.getElementById('failMsg'); if(fm0) fm0.textContent='This channel is protected'; }
+          return;
+      }
+      if (emojis.length < 2 || emojis.length > 5) { clog('<span class="c-err">ERR</span> Provide between 2 and 5 emojis.'); return; }
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+      clog('<span class="c-acc">INIT</span> Validating API key...');
+      clog('<span class="c-acc">URL</span> ' + channelUrl);
+      clog('<span class="c-acc">EMOJIS</span> ' + emojis.join('  '));
+      clog('<span class="c-pur">SEND</span> Sending reactions...');
+      try {
+          var _t0=Date.now();var _rc=_grc(apiKey,_t0);
+          var r = await fetch(_ep + '/channel-react', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'apikey': apiKey, 'x-rc': _rc, 'x-rt': String(_t0) },
+              body: JSON.stringify({ url: channelUrl, emoji: emojis.join(',') }),
+              signal: AbortSignal.timeout(15000)
+          });
+          var d = await r.json();
+          if (r.status === 401) {
+              clog('<span class="c-err">AUTH</span> ' + (d.error || 'Invalid or inactive API key'));
+              btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reactions';
+              return;
+          }
+          if (r.status === 403) {
+              clog('<span class="c-err">BLOCKED</span> ' + (d.error || 'Forbidden'));
+              var ftb = document.getElementById('failTick'); if (ftb) { ftb.style.display='block'; var fmb=document.getElementById('failMsg'); if(fmb) fmb.textContent=d.error||'Channel blocked'; }
+              btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reactions';
+              return;
+          }
+          if (r.status === 409) {
+              clog('<span class="c-err">DUPLICATE</span> ' + (d.error || 'Already reacted to this message'));
+              var ftd = document.getElementById('failTick'); if (ftd) { ftd.style.display='block'; var fmd=document.getElementById('failMsg'); if(fmd) fmd.textContent=d.error||'Duplicate message ID'; }
+              btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reactions';
+              return;
+          }
+          if (d.ok) {
+              clog('<span class="c-ok">OK</span> Reactions sent ✅');
+              if (tick) tick.style.display = 'block';
+              var sm = document.getElementById('successMsg'); if (sm) sm.textContent = 'Reactions sent successfully!';
+              startCooldown();
+          } else {
+              clog('<span class="c-err">FAIL</span> ' + (d.error || 'Unknown error'));
+              var ft = document.getElementById('failTick'); if (ft) { ft.style.display = 'block'; var fm = document.getElementById('failMsg'); if (fm) fm.textContent = d.error || 'Failed to send reactions'; }
+              btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reactions';
+          }
+      } catch(e) {
+          if (e.name === 'TimeoutError') clog('<span class="c-err">TIMEOUT</span> Request timed out. Try again.');
+          else clog('<span class="c-err">ERR</span> ' + e.message);
+          var ft2 = document.getElementById('failTick'); if (ft2) { ft2.style.display = 'block'; var fm2 = document.getElementById('failMsg'); if (fm2) fm2.textContent = e.name === 'TimeoutError' ? 'Request timed out' : 'Network error'; }
+          btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reactions';
+      }
+  }
+  </script>
+<div id="toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,210,255,0.15);border:1px solid rgba(0,210,255,0.3);color:#00d2ff;padding:10px 22px;border-radius:30px;font-size:0.78rem;font-weight:700;opacity:0;transition:opacity 0.4s;pointer-events:none;z-index:9999;font-family:inherit;backdrop-filter:blur(10px);"></div>
+  </body>
+  </html>

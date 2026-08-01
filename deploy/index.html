@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GESTON MD | DEPLOYMENT HUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --accent: #00ffcc;
+            --geston: #ff3366;
+            --bg: #030712;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- LOADER --- */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        .loader-content {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+
+        .loader-circle {
+            position: absolute;
+            inset: 0;
+            border: 2px solid transparent;
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loader-circle:nth-child(2) {
+            inset: 10px;
+            border-top-color: var(--geston);
+            animation-duration: 1.5s;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loader-text {
+            margin-top: 30px;
+            font-size: 10px;
+            letter-spacing: 5px;
+            color: var(--accent);
+            font-weight: 800;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }
+
+        /* --- BACKGROUND --- */
+        .canvas-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(0, 255, 204, 0.05) 0%, transparent 40%);
+        }
+
+        /* --- NAV --- */
+        nav {
+            width: 100%;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(3, 7, 18, 0.5);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-logo {
+            font-weight: 800;
+            font-size: 1.4rem;
+            letter-spacing: -1px;
+            color: var(--accent);
+        }
+
+        .nav-home {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            transition: all 0.3s;
+        }
+
+        .nav-home:hover {
+            color: var(--accent);
+            border-color: rgba(0, 255, 204, 0.4);
+        }
+
+        /* --- PAGE HEADER --- */
+        .page-header {
+            padding: 60px 20px 40px;
+            text-align: center;
+            width: 100%;
+            max-width: 800px;
+            animation: slideDown 0.8s ease backwards;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(0, 255, 204, 0.05);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            border-radius: 100px;
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .page-header h1 {
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            font-weight: 800;
+            letter-spacing: -2px;
+            line-height: 1;
+            margin-bottom: 15px;
+            background: linear-gradient(to bottom, #fff 30%, rgba(255,255,255,0.5));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page-header p {
+            color: #94a3b8;
+            font-size: 15px;
+        }
+
+        /* --- CONTENT AREA --- */
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 0 20px 80px;
+            animation: slideUp 0.8s ease backwards 0.2s;
+        }
+
+        /* --- DEPLOY GRID --- */
+        .deploy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        /* --- CARD --- */
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 45px 30px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            backdrop-filter: blur(15px);
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .icon-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 25px;
+            background: rgba(255,255,255,0.03);
+        }
+
+        .card.heroku .icon-box { 
+            color: #79589F; 
+            background: rgba(121, 88, 159, 0.18); 
+        }
+
+        .card.panel .icon-box { color: var(--accent); background: rgba(0, 255, 204, 0.1); }
+        .card.zip .icon-box { color: var(--primary); background: rgba(99, 102, 241, 0.15); }
+        .card.video .icon-box { color: #ff0000; background: rgba(255, 0, 0, 0.1); }
+        .card.guide .icon-box { color: var(--accent); background: rgba(0, 255, 204, 0.1); }
+
+        .card h3 {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        /* --- CARD BUTTON --- */
+        .card-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            color: #fff;
+        }
+
+        .card-btn:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+
+        .card-btn.red:hover { background: #ff0000; color: #fff; border-color: #ff0000; }
+
+        /* --- BACK BUTTON --- */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: none;
+            border: 1px solid var(--border);
+            color: #94a3b8;
+            padding: 10px 20px;
+            border-radius: 100px;
+            cursor: pointer;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .back-btn:hover {
+            color: var(--accent);
+            border-color: rgba(0, 255, 204, 0.4);
+        }
+
+        /* --- INSTRUCTIONS --- */
+        .instruction-text {
+            text-align: left;
+            background: rgba(0,0,0,0.3);
+            padding: 30px;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            line-height: 1.8;
+            color: #cbd5e1;
+        }
+
+        .instruction-text p { margin-bottom: 18px; }
+        .instruction-text p:last-child { margin-bottom: 0; }
+
+        .step-number {
+            color: var(--accent);
+            font-weight: 800;
+            margin-right: 10px;
+        }
+
+        .instruction-text a { color: var(--accent); }
+        .instruction-text code {
+            background: rgba(255,255,255,0.08);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        /* --- SUB-PAGES --- */
+        #panel-view, #instructions-view { display: none; animation: fadeIn 0.5s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; filter: blur(8px); } to { opacity: 1; filter: blur(0); } }
+
+        /* --- ANIMATIONS --- */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            .page-header { padding: 40px 20px 30px; }
+            .card { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="loader-content">
+            <div class="loader-circle"></div>
+            <div class="loader-circle"></div>
+        </div>
+        <div class="loader-text">ESTABLISHING UPLINK</div>
+    </div>
+
+    <div class="canvas-bg"></div>
+
+    <nav>
+        <div class="nav-logo">GESTON MD</div>
+        <a href="/" class="nav-home"><i class="fas fa-arrow-left"></i> HOME</a>
+    </nav>
+
+    <!-- MAIN HUB -->
+    <div id="main-view" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+        <div class="page-header">
+            <div class="badge">INFRASTRUCTURE</div>
+            <h1>Deployment Hub</h1>
+            <p>Select your infrastructure. Power up your Geston MD Bot.</p>
+        </div>
+
+        <div class="container">
+            <div class="deploy-grid">
+                <div class="card heroku">
+                    <div class="icon-box">
+                        <!-- Official Heroku Logo SVG -->
+                        <svg width="52" height="52" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L21 10H16V19H8V10H3L12 2Z"/>
+                            <rect x="6" y="15" width="12" height="5" rx="1"/>
+                        </svg>
+                    </div>
+                    <h3>Heroku</h3>
+                    <p>Quickest one-click setup. Recommended for stable cloud hosting.</p>
+                    <a href="https://dashboard.heroku.com/new?template=https%3A%2F%2Fgithub.com%2Fgestontech%2FGeston-MD" class="card-btn" target="_blank">Deploy on Heroku</a>
+                </div>
+
+                <div class="card panel">
+                    <div class="icon-box"><i class="fas fa-server"></i></div>
+                    <h3>Panels</h3>
+                    <p>Full control deployment. Best for Pterodactyl and private VPS users.</p>
+                    <button class="card-btn" onclick="showPanel()">Setup on Panel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL VIEW -->
+    <div id="panel-view" style="width:100%; display:none; flex-direction:column; align-items:center;">
+        <div class="page-header">
+            <div class="badge">PANEL SETUP</div>
+            <h1>Panel Deploy</h1>
+            <p>Choose your setup method below.</p>
+        </div>
+
+        <div class="container">
+            <button class="back-btn" onclick="showMain()"><i class="fas fa-arrow-left"></i> Back</button>
+            <div class="deploy-grid" style="grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));">
+                <div class="card zip">
+                    <div class="icon-box"><i class="fas fa-file-archive"></i></div>
+                    <h3>Source Files</h3>
+                    <p>Get the latest Geston MD Panel zip bundle.</p>
+                    <a href="https://www.mediafire.com/file/2o0plf66lvafq07/Geston-MD-update1.6.2.zip/file" class="card-btn" target="_blank">Download ZIP</a>
+                </div>
+
+                <div class="card video">
+                    <div class="icon-box"><i class="fab fa-youtube"></i></div>
+                    <h3>Video Tutorial</h3>
+                    <p>Watch the full deployment guide on YouTube.</p>
+                    <a href="https://youtu.be/oJWDAxzdBrc" class="card-btn red" target="_blank">Watch Now</a>
+                </div>
+
+                <div class="card guide">
+                    <div class="icon-box"><i class="fas fa-book"></i></div>
+                    <h3>Instructions</h3>
+                    <p>Step-by-step text guide for panel deployment.</p>
+                    <button class="card-btn" onclick="showInstructions()">View Steps</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INSTRUCTIONS VIEW -->
+    <div id="instructions-view" style="width:100%; display:none; flex-direction:column; align-items:center;">
+        <div class="page-header">
+            <div class="badge">STEP-BY-STEP</div>
+            <h1>Setup Guide</h1>
+            <p>Follow these steps carefully to deploy your bot.</p>
+        </div>
+
+        <div class="container">
+            <button class="back-btn" onclick="showPanel()"><i class="fas fa-arrow-left"></i> Back</button>
+            <div class="card" style="text-align:left; max-width:720px; margin:0 auto;">
+                <h3 style="margin-bottom:25px; color:var(--accent); font-size:18px;"><i class="fas fa-terminal" style="margin-right:10px;"></i>Step-by-Step Guide</h3>
+                <div class="instruction-text">
+                    <p><span class="step-number">01.</span> <strong>Get Session:</strong> Visit <a href="https://gestonmd.tech/pairing" target="_blank">gestonmd.tech/pairing</a>, link your account, and <strong>copy your Session ID</strong>.</p>
+                    <p><span class="step-number">02.</span> <strong>Upload:</strong> Upload the downloaded ZIP file to your panel's File Manager.</p>
+                    <p><span class="step-number">03.</span> <strong>Extract:</strong> Right-click the ZIP and select <strong>Unarchive</strong> or Extract.</p>
+                    <p><span class="step-number">04.</span> <strong>Session Setup:</strong> Locate <code>session.json</code>, open it, and paste your Session ID inside.</p>
+                    <p><span class="step-number">05.</span> <strong>Configure:</strong> Open <code>settings.js</code> to adjust your bot settings and owner info.</p>
+                    <p><span class="step-number">06.</span> <strong>Start:</strong> Go to your console and hit <strong>Run/Start</strong> to activate your bot!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer style="text-align:center; padding:60px 20px; color:#475569; font-size:12px; letter-spacing:2px; width:100%;">
+        © 2026 GESTON TECH &bull; ALL RIGHTS RESERVED
+    </footer>
+
+    <script>
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('loader');
+            setTimeout(() => {
+                loader.style.transform = 'translateY(-100%)';
+                setTimeout(() => loader.style.display = 'none', 800);
+            }, 1000);
+        });
+
+        function showMain() {
+            document.getElementById('panel-view').style.display = 'none';
+            document.getElementById('instructions-view').style.display = 'none';
+            document.getElementById('main-view').style.display = 'flex';
+            window.scrollTo(0, 0);
+        }
+
+        function showPanel() {
+            document.getElementById('main-view').style.display = 'none';
+            document.getElementById('instructions-view').style.display = 'none';
+            document.getElementById('panel-view').style.display = 'flex';
+            window.scrollTo(0, 0);
+        }
+
+        function showInstructions() {
+            document.getElementById('panel-view').style.display = 'none';
+            document.getElementById('main-view').style.display = 'none';
+            document.getElementById('instructions-view').style.display = 'flex';
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>
